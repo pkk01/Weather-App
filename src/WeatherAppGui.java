@@ -1,5 +1,8 @@
+import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
@@ -11,7 +14,11 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
+import org.json.simple.JSONObject;
+
 public class WeatherAppGui extends JFrame {
+    private JSONObject weatherData;
+
     public WeatherAppGui() {
         super("Weather App");
 
@@ -68,7 +75,7 @@ public class WeatherAppGui extends JFrame {
 
         // humidity text
 
-        JLabel humidityText = new JLabel("<html><b>Humidity</b> 100% </html>"); // we can html in JLabel
+        JLabel humidityText = new JLabel("<html><b>Humidity</b> 100% </html>"); // we can use html in JLabel
         humidityText.setBounds(90, 500, 85, 55);
         humidityText.setFont(new Font("Dialog", Font.PLAIN, 16));
         add(humidityText);
@@ -85,6 +92,13 @@ public class WeatherAppGui extends JFrame {
         windSpeedText.setFont(new Font("Dialog", Font.PLAIN, 16));
         add(windSpeedText);
 
+        // developer watermark
+        JLabel pkText = new JLabel("Developed by PK");
+        pkText.setBounds(270, 565, 1000, 55);
+        pkText.setFont(new Font("Dialog", Font.PLAIN, 20));
+        pkText.setForeground(Color.RED);
+        add(pkText);
+
         // search button
         JButton searchButton = new JButton(loadImage("src\\assets\\search.png"));
 
@@ -92,6 +106,58 @@ public class WeatherAppGui extends JFrame {
 
         searchButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         searchButton.setBounds(375, 13, 47, 45);
+        searchButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String userInput = searchTextField.getText();
+
+                if (userInput.replaceAll("\\s", "").length() <= 0) {
+                    return;
+                }
+
+                weatherData = WeatherApp.getWeatherData(userInput);
+
+                if (weatherData == null) {
+                    System.out.println("Error: Weather data is not available.");
+                    weatherConditionDesc.setText("Weather data unavailable");
+                    temperatureText.setText("N/A");
+                    humidityText.setText("<html><b>Humidity</b> N/A</html>");
+                    windSpeedText.setText("<html><b>Windspeed</b> N/A</html>");
+                    return;
+                }
+
+                String weatherCondition = (String) weatherData.get("weather_condition");
+
+                switch (weatherCondition) {
+                    case "Clear":
+                        weatherConditionImage.setIcon(loadImage("src\\assets\\clear.png"));
+                        break;
+                    case "Cloudy":
+                        weatherConditionImage.setIcon(loadImage("src\\assets\\cloudy.png"));
+                        break;
+                    case "Rain":
+                        weatherConditionImage.setIcon(loadImage("src\\assets\\rain.png"));
+                        break;
+                    case "Snow":
+                        weatherConditionImage.setIcon(loadImage("src\\assets\\snow.png"));
+                        break;
+                    default:
+                        weatherConditionImage.setIcon(loadImage("src\\assets\\cloudy.png"));
+                }
+
+                String temperature = weatherData.get("temperature").toString();
+                temperatureText.setText(temperature + " C");
+
+                weatherConditionDesc.setText(weatherCondition);
+
+                String humidity = weatherData.get("humidity").toString();
+                humidityText.setText("<html><b>Humidity</b> " + humidity + "%</html>");
+
+                String windspeed = weatherData.get("windspeed").toString();
+                windSpeedText.setText("<html><b>Windspeed</b> " + windspeed + "km/h</html>");
+            }
+        });
+
         add(searchButton);
 
     }
